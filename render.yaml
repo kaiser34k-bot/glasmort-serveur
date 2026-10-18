@@ -1,0 +1,15 @@
+# Déploiement Render (« New » → « Blueprint » → choisir ce dépôt)
+services:
+  - type: web
+    name: glasmort-serveur
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false   # Render te demandera de coller l'adresse de la base Neon
