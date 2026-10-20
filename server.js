@@ -15,8 +15,8 @@ const { WebSocketServer } = require('ws');
 const PORT = +process.env.PORT || 8790;
 const MAX_PARTY = 4;
 const GRACE_MS = 90 * 1000;            // un membre qui recharge (changement de carte) garde sa place
-const MAPS = ['montouliers', 'train', 'marraines', 'cloche'];
-const MAP_NAMES = { montouliers: 'Le Glas de Montouliers', train: 'Le Train des Âmes', marraines: 'La Forêt des Marraines', cloche: 'Le Royaume Sous la Cloche' };
+const MAPS = ['montouliers', 'train', 'marraines', 'cloche', 'dormance'];
+const MAP_NAMES = { montouliers: 'Le Glas de Montouliers', train: 'Le Train des Âmes', marraines: 'La Forêt des Marraines', cloche: 'Le Royaume Sous la Cloche', dormance: 'Le Pays de Dormance' };
 const HEROES = ['gabriel', 'nael', 'pablo', 'samuel'];
 
 /* ---------------- Stockage ---------------- */
@@ -322,7 +322,10 @@ setInterval(() => { for (const ws of wss.clients) { if (ws._zvDead) { ws.termina
 wss.on('connection', ws => ws.on('pong', () => { ws._zvDead = false; }));
 
 (async () => {
-  store = process.env.DATABASE_URL ? new PgStore(process.env.DATABASE_URL) : new FileStore(process.env.DATA_FILE || path.join(__dirname, 'data', 'users.json'));
+  // l'adresse Neon est parfois collée avec « psql », des guillemets ou des espaces : on n'en garde que postgresql://…
+  const raw = (process.env.DATABASE_URL || '').trim(), dbUrl = (raw.match(/postgres(?:ql)?:\/\/[^\s'"]+/) || [])[0];
+  if (raw && !dbUrl) { console.error('DATABASE_URL invalide : elle doit commencer par postgresql:// (Neon > Connect > copier la « connection string »).'); process.exit(1); }
+  store = dbUrl ? new PgStore(dbUrl) : new FileStore(process.env.DATA_FILE || path.join(__dirname, 'data', 'users.json'));
   await store.load();
   server.listen(PORT, () => console.log(`Serveur Glasmort sur le port ${PORT} · ${users.size} comptes · stockage ${process.env.DATABASE_URL ? 'PostgreSQL' : 'fichier'}`));
 })().catch(e => { console.error(e); process.exit(1); });
